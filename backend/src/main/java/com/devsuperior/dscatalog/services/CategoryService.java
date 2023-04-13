@@ -6,12 +6,12 @@ import com.devsuperior.dscatalog.entities.Category;
 import com.devsuperior.dscatalog.repositories.CategoryRepository;
 import com.devsuperior.dscatalog.services.exceptions.DataBaseException;
 import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityNotFoundException;
@@ -26,18 +26,20 @@ public class CategoryService {
   private CategoryRepository repository;
 
   /**
-   * Find all list.
+   * Find all paged.
    *
-   * @return the list
+   * @param pageRequest the page request
+   * @return the page
    */
   @Transactional(readOnly = true)
-  public List<CategoryDTO> findAll() {
-    List<Category> list = repository.findAll();
-    // Uses a  lambda expression.
-    //return list.stream().map(x -> new CategoryDTO(x)).collect(Collectors.toList());
+  public Page<CategoryDTO> findAllPaged(PageRequest pageRequest) {
+    Page<Category> list = repository.findAll(pageRequest);
+    // using page, we can delete .stream and .collect, because Page are
+    // java 8 and already have these methods.
+    // return: list.stream().map(CategoryDTO::new).collect(Collectors.toList());
+    // return: list.map(CategoryDTO::new).collect(Collectors.toList());
+    return list.map(CategoryDTO::new); // shortcut return xD
 
-    // Another option: use the method reference.
-    return list.stream().map(CategoryDTO::new).collect(Collectors.toList());
   }
 
   /**
@@ -67,6 +69,13 @@ public class CategoryService {
     return new CategoryDTO(entity);
   }
 
+  /**
+   * Update category dto.
+   *
+   * @param id  the id
+   * @param dto the dto
+   * @return the category dto
+   */
   @Transactional
   public CategoryDTO update(Long id, CategoryDTO dto) {
     try {
@@ -81,6 +90,11 @@ public class CategoryService {
     }
   }
 
+  /**
+   * Delete.
+   *
+   * @param id the id
+   */
   public void delete(Long id) {
     try {
       repository.deleteById(id);
